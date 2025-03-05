@@ -212,7 +212,7 @@ def main():
     
     parser = argparse.ArgumentParser(description="Analyze video transcripts using OpenRouter API with Deep Seek V3")
     parser.add_argument("--api-key", help="OpenRouter API key")
-    parser.add_argument("--directory", default="../download_and_transcribe", help="Directory containing transcript files")
+    parser.add_argument("--directory", default="..", help="Directory containing transcript files")
     parser.add_argument("--output", default="transcript_analysis.json", help="Output file for analysis results")
     
     args = parser.parse_args()
