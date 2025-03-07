@@ -7,6 +7,7 @@ import time
 import sys
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
+import warnings
 
 class TranscriptAnalyzer:
     def __init__(self, api_key):
@@ -144,7 +145,11 @@ class TranscriptAnalyzer:
             return f"Error: {str(e)}"
             
     def analyze(self, text, prompt, max_tokens=1000, cache_key=None):
-        return asyncio.run(self.analyze_async(text, prompt, max_tokens, cache_key))
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            return self.analyze_async(text, prompt, max_tokens, cache_key)
+        else:
+            return asyncio.run(self.analyze_async(text, prompt, max_tokens, cache_key))
 
     async def analyze_stock_opinions_async(self, text, chunk_number, total_chunks):
         chunk_info = f"[Analyzing chunk {chunk_number} of {total_chunks}]"
@@ -183,7 +188,11 @@ class TranscriptAnalyzer:
         }
         
     def analyze_stock_opinions(self, text, chunk_number, total_chunks):
-        return asyncio.run(self.analyze_stock_opinions_async(text, chunk_number, total_chunks))
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            return self.analyze_stock_opinions_async(text, chunk_number, total_chunks)
+        else:
+            return asyncio.run(self.analyze_stock_opinions_async(text, chunk_number, total_chunks))
 
     async def analyze_transcript_async(self, transcript_data):
         full_text = self.extract_full_text(transcript_data)
@@ -238,7 +247,11 @@ class TranscriptAnalyzer:
         return analysis_result
         
     def analyze_transcript(self, transcript_data):
-        return asyncio.run(self.analyze_transcript_async(transcript_data))
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            return self.analyze_transcript_async(transcript_data)
+        else:
+            return asyncio.run(self.analyze_transcript_async(transcript_data))
 
     async def run_batch_analysis_async(self, directory, output_file=None, max_concurrency=3):
         transcript_files = self.get_transcript_files(directory)
@@ -287,8 +300,26 @@ class TranscriptAnalyzer:
         return all_results
         
     def run_batch_analysis(self, directory, output_file=None):
-        return asyncio.run(self.run_batch_analysis_async(directory, output_file))
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            return self.run_batch_analysis_async(directory, output_file)
+        else:
+            return asyncio.run(self.run_batch_analysis_async(directory, output_file))
 
+
+def silence_event_loop_closed(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except RuntimeError as e:
+            if str(e) != 'Event loop is closed':
+                raise
+    return wrapper
+
+if sys.platform == 'win32':
+    asyncio.proactor_events._ProactorBasePipeTransport.__del__ = silence_event_loop_closed(
+        asyncio.proactor_events._ProactorBasePipeTransport.__del__
+    )
 
 async def async_main():
     import argparse
@@ -316,7 +347,12 @@ async def async_main():
     await analyzer.run_batch_analysis_async(directory, args.output, args.max_concurrency)
 
 def main():
-    asyncio.run(async_main())
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    
+    try:
+        asyncio.run(async_main())
+    except KeyboardInterrupt:
+        print("\nExiting gracefully due to keyboard interrupt...")
 
 if __name__ == "__main__":
     main()

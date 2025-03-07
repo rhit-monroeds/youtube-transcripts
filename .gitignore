@@ -2,3 +2,5 @@
 *.json
 ffmpeg-master-latest-win64-gpl/
 *.webm
+.env
+*.txt
