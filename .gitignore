@@ -4,3 +4,7 @@ ffmpeg-master-latest-win64-gpl/
 *.webm
 .env
 *.txt
+.venv
+ffmpeg.exe
+ffplay.exe
+ffprobe.exe
