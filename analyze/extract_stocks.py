@@ -3,6 +3,21 @@ import json
 import re
 from collections import defaultdict
 
+def write_line_with_breaks(file, line, indent_level=4):
+    indent = " " * indent_level
+    if len(line) <= 120:
+        file.write(f"{line}\n")
+        return
+    mid_point = 100
+    while mid_point > 0 and line[mid_point] not in ' .,;:':
+        mid_point -= 1
+    if mid_point > 0:
+        file.write(f"{line[:mid_point]}\n")
+        write_line_with_breaks(file, f"{indent}{line[mid_point:].lstrip()}", indent_level)
+    else:
+        file.write(f"{line[:120]}\n")
+        write_line_with_breaks(file, f"{indent}{line[120:].lstrip()}", indent_level)
+
 def extract_stock_opinions():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     input_file = os.path.join(script_dir, 'transcript_analysis.json')
@@ -89,7 +104,8 @@ def extract_stock_opinions():
             f.write("-" * len(f"{name} {ticker}") + "\n")
             
             for opinion in stock['opinions']:
-                f.write(f"• {opinion['text']} (Chunk {opinion['chunk']})\n")
+                line = f"• {opinion['text']} (Chunk {opinion['chunk']})"
+                write_line_with_breaks(f, line)
             
             f.write("\n\n")
     
