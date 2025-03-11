@@ -13,13 +13,13 @@ def check_ffmpeg():
         '',
         os.path.abspath('ffmpeg/bin'),
         os.path.abspath('ffmpeg-master-latest-win64-gpl/bin'),
+        os.path.join(os.getcwd(), 'ffmpeg-linux')
     ]
     
     ffmpeg_found = False
     for path in ffmpeg_paths:
         if path:
             os.environ["PATH"] = path + os.pathsep + os.environ["PATH"]
-        
         try:
             subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
             print(f"Found ffmpeg in: {path or 'System PATH'}")
