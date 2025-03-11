@@ -1,8 +1,9 @@
 import sys
 import os
 import json
-import whisper
+import whisperx
 import threading
+import torch
 import time
 import subprocess
 from datetime import datetime
@@ -70,8 +71,10 @@ def transcribe_audio(audio_path):
         if not check_ffmpeg():
             return None
         
-        print(f"Loading Whisper model...")
-        model = whisper.load_model("base")
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        compute_type = "float16" if device == "cuda" else "float32"
+        print(f"Loading WhisperX model on {device} using {compute_type} precision...")
+        model = whisperx.load_model("base", device=device, compute_type=compute_type)
         
         pbar = tqdm(desc="Transcribing", bar_format='{desc}: {bar}| {elapsed}')
         stop_progress = threading.Event()
@@ -86,7 +89,11 @@ def transcribe_audio(audio_path):
         
         try:
             print(f"Starting transcription for: {metadata.get('title', audio_path)}")
-            result = model.transcribe(audio_path)
+            audio = whisperx.load_audio(audio_path)
+            result = model.transcribe(audio, language="en")
+            
+            model_a, metadata = whisperx.load_align_model(language_code="en", device=device)
+            result = whisperx.align(result["segments"], model_a, metadata, audio, device=device)
         finally:
             stop_progress.set()
             progress_thread.join()
